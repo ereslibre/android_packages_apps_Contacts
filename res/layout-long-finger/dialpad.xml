@@ -33,7 +33,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_1_no_vm"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_one"
         />
@@ -42,7 +42,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_2"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_two"
         />
@@ -51,7 +51,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_3"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_three"
         />
@@ -60,7 +60,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_4"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_four"
         />
@@ -69,7 +69,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_5"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_five"
         />
@@ -78,7 +78,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_6"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_six"
         />
@@ -87,7 +87,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_7"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_seven"
         />
@@ -96,7 +96,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_8"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_eight"
         />
@@ -105,7 +105,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_9"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_nine"
         />
@@ -114,7 +114,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_star"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_star"
         />
@@ -123,7 +123,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_0"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_zero"
         />
@@ -132,7 +132,7 @@
             android:layout_width="88dp"
             android:layout_height="58dp"
             android:src="@drawable/dial_num_pound"
-            android:background="@drawable/btn_dial"
+            android:background="@drawable/btn_dial_action"
             android:soundEffectsEnabled="false"
             android:contentDescription="@string/description_image_button_pound"
         />
