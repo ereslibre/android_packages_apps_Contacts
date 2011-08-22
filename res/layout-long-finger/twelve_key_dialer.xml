@@ -41,6 +41,7 @@
         android:editable="false"
         android:cursorVisible="false"
         android:layout_weight="0"
+        android:contentDescription="@string/description_digits_edittext"
     />
 
     <ListView android:id="@+id/resultList"
