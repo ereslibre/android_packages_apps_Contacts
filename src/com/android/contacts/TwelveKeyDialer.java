@@ -848,9 +848,9 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         Uri uri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id);
         InputStream input = ContactsContract.Contacts.openContactPhotoInputStream(getContentResolver(), uri);
         if (input == null) {
-            return Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_contact_picture), 38, 38, true);
+            return Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_contact_picture), 48, 48, true);
         }
-        return Bitmap.createScaledBitmap(BitmapFactory.decodeStream(input), 38, 38, true);
+        return Bitmap.createScaledBitmap(BitmapFactory.decodeStream(input), 48, 48, true);
     }
 
     public boolean onKey(View view, int keyCode, KeyEvent event) {
@@ -1322,15 +1322,20 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 return null;
             }
             if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_small, null);
+                convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_with_phone_small, null);
             }
             TextView text = (TextView) convertView.findViewById(R.id.text);
             text.setText(previousCursors.peek().get(position).name, TextView.BufferType.SPANNABLE);
             Spannable resultToSpan = (Spannable) text.getText();
             resultToSpan.setSpan(new BackgroundColorSpan(android.graphics.Color.YELLOW), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             resultToSpan.setSpan(new ForegroundColorSpan(android.graphics.Color.BLACK), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            TextView phone = (TextView) convertView.findViewById(R.id.phone);
+            phone.setText("+0100000000");
+
             ImageView icon = (ImageView) convertView.findViewById(R.id.icon);
             icon.setImageBitmap(loadContactPhoto(previousCursors.peek().get(position).id));
+
             return convertView;
         }
     }

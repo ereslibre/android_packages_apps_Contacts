@@ -24,14 +24,29 @@
     <ImageView android:id="@+id/icon"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_gravity="center_vertical"
-        android:scaleType="center" />
+        android:scaleType="center"
+        android:layout_gravity="center_vertical" />
 
-    <TextView android:id="@+id/text"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:layout_gravity="center_vertical"
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingLeft="0.5dp" />
+        android:layout_height="match_parent"
+        android:layout_gravity="center_vertical" >
+
+        <TextView android:id="@+id/text"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_gravity="bottom"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="0.5dp" />
+
+        <TextView android:id="@+id/phone"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:layout_gravity="top"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="0.5dp" />
+
+    </LinearLayout>
 
 </LinearLayout>
