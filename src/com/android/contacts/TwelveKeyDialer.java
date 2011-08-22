@@ -271,20 +271,22 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         mCollator.setStrength(Collator.PRIMARY);
 
         mResultList = (ListView) findViewById(R.id.resultList);
-        mResultListAdapter = new ResultListAdapter(this, mResultList);
-        mResultList.setAdapter(mResultListAdapter);
-        final Context context = this;
-        mResultList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> arg1, View arg2, int position, long arg4) {
-                if (previousCursors.empty()) {
-                    return;
+        if (mResultList != null) {
+            mResultListAdapter = new ResultListAdapter(this, mResultList);
+            mResultList.setAdapter(mResultListAdapter);
+            final Context context = this;
+            mResultList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> arg1, View arg2, int position, long arg4) {
+                    if (previousCursors.empty()) {
+                        return;
+                    }
+                    ArrayList<ContactInfo> contacts = previousCursors.peek();
+                    ContactInfo contact = contacts.get(position);
+                    ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
                 }
-                ArrayList<ContactInfo> contacts = previousCursors.peek();
-                ContactInfo contact = contacts.get(position);
-                ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
-            }
-        });
+            });
+        }
 
         maybeAddNumberFormatting();
 
@@ -798,7 +800,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             default:
                 break;
         }
-        if (index > -1) {
+        if (mResultList != null && index > -1) {
             if (previousCursors.empty()) {
                 ArrayList<ContactInfo> contacts = new ArrayList<ContactInfo>();
                 Cursor c = managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
@@ -1166,7 +1168,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         if (enabled) {
             // Log.i(TAG, "Showing dialpad chooser!");
             mDigits.setVisibility(View.GONE);
-            mResultList.setVisibility(View.GONE);
+            if (mResultList != null) mResultList.setVisibility(View.GONE);
             if (mDialpad != null) mDialpad.setVisibility(View.GONE);
             mVoicemailDialAndDeleteRow.setVisibility(View.GONE);
             mDialpadChooser.setVisibility(View.VISIBLE);
@@ -1180,7 +1182,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         } else {
             // Log.i(TAG, "Displaying normal Dialer UI.");
             mDigits.setVisibility(View.VISIBLE);
-            mResultList.setVisibility(View.VISIBLE);
+            if (mResultList != null) mResultList.setVisibility(View.VISIBLE);
             if (mDialpad != null) mDialpad.setVisibility(View.VISIBLE);
             mVoicemailDialAndDeleteRow.setVisibility(View.VISIBLE);
             mDialpadChooser.setVisibility(View.GONE);
