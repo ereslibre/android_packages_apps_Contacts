@@ -188,9 +188,14 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     /** Indicates if we are opening this dialer to add a call from the InCallScreen. */
     private boolean mIsAddCallMode;
 
+    private static final int MATCH_TYPE_NAME = 0;
+    private static final int MATCH_TYPE_INITIALS = 1;
+    private static final int MATCH_TYPE_NUMBER = 2;
+
     private class ContactInfo {
-        public String name;
         public long   id;
+        public String name;
+        public int    matchType;
     };
 
     PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
@@ -808,8 +813,9 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     if (Integer.parseInt(c.getString(c.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
                         long contactId = c.getLong(c.getColumnIndex(ContactsContract.Contacts._ID));
                         ContactInfo contactInfo = new ContactInfo();
-                        contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
                         contactInfo.id = contactId;
+                        contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                        contactInfo.matchType = MATCH_TYPE_NAME;
                         contacts.add(contactInfo);
                     }
                 }
@@ -1321,20 +1327,31 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             if (previousCursors.empty() || previousCursors.peek().size() <= position) {
                 return null;
             }
+            ContactInfo contactInfo = previousCursors.peek().get(position);
             if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_with_phone_small, null);
+                switch (contactInfo.matchType) {
+                    case MATCH_TYPE_NAME:
+                    case MATCH_TYPE_INITIALS:
+                        convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_small, null);
+                        break;
+                    case MATCH_TYPE_NUMBER:
+                        convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_with_phone_small, null);
+                        break;
+                }
             }
             TextView text = (TextView) convertView.findViewById(R.id.text);
-            text.setText(previousCursors.peek().get(position).name, TextView.BufferType.SPANNABLE);
+            text.setText(contactInfo.name, TextView.BufferType.SPANNABLE);
             Spannable resultToSpan = (Spannable) text.getText();
             resultToSpan.setSpan(new BackgroundColorSpan(android.graphics.Color.YELLOW), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             resultToSpan.setSpan(new ForegroundColorSpan(android.graphics.Color.BLACK), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
             TextView phone = (TextView) convertView.findViewById(R.id.phone);
-            phone.setText("+0100000000");
+            if (phone != null) {
+                phone.setText("+0100000000");
+            }
 
             ImageView icon = (ImageView) convertView.findViewById(R.id.icon);
-            icon.setImageBitmap(loadContactPhoto(previousCursors.peek().get(position).id));
+            icon.setImageBitmap(loadContactPhoto(contactInfo.id));
 
             return convertView;
         }
