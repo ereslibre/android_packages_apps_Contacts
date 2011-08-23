@@ -73,8 +73,9 @@ import android.content.ContentUris;
 import android.text.Spannable;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
-import com.android.contacts.PhoneDisambigDialog;
+import android.content.ContentResolver;
 
+import com.android.contacts.PhoneDisambigDialog;
 import com.android.internal.telephony.ITelephony;
 
 import java.util.ArrayList;
@@ -872,16 +873,18 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
 
         // Now check if we find matching phone numbers
         if (mIntroducedNumbers.length() > 0) {
-            Cursor c = getContentResolver().query(Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(mIntroducedNumbers)),
-                                                  new String[]{ ContactsContract.Contacts._ID,
+            Cursor c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                                  new String[]{ ContactsContract.Data.CONTACT_ID,
                                                                 ContactsContract.Contacts.DISPLAY_NAME,
-                                                                ContactsContract.PhoneLookup.NUMBER }, null, null, null);
+                                                                ContactsContract.CommonDataKinds.Phone.NUMBER },
+                                                  ContactsContract.CommonDataKinds.Phone.NUMBER + " like ?",
+                                                  new String[]{ mIntroducedNumbers + '%' }, null);
             while (c.moveToNext()) {
                 shouldNotify = true;
                 ContactInfo contactInfo = new ContactInfo();
-                contactInfo.id = c.getLong(c.getColumnIndex(ContactsContract.Contacts._ID));
+                contactInfo.id = c.getLong(c.getColumnIndex(ContactsContract.Data.CONTACT_ID));
                 contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-                contactInfo.number = c.getString(c.getColumnIndex(ContactsContract.PhoneLookup.NUMBER));
+                contactInfo.number = c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
                 contactInfo.matchType = MATCH_TYPE_NUMBER;
                 newContacts.add(contactInfo);
             }
@@ -1382,16 +1385,14 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 return null;
             }
             ContactInfo contactInfo = previousCursors.peek().get(position);
-            if (convertView == null) {
-                switch (contactInfo.matchType) {
-                    case MATCH_TYPE_NAME:
-                    case MATCH_TYPE_INITIALS:
-                        convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_small, null);
-                        break;
-                    case MATCH_TYPE_NUMBER:
-                        convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_with_phone_small, null);
-                        break;
-                }
+            switch (contactInfo.matchType) {
+                case MATCH_TYPE_NAME:
+                case MATCH_TYPE_INITIALS:
+                    convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_small, null);
+                    break;
+                case MATCH_TYPE_NUMBER:
+                    convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_with_phone_small, null);
+                    break;
             }
             TextView text = (TextView) convertView.findViewById(R.id.text);
             text.setText(contactInfo.name, TextView.BufferType.SPANNABLE);
