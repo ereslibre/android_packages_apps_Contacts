@@ -857,7 +857,8 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             Iterator<ContactInfo> contactIt = contacts.iterator();
             while (contactIt.hasNext()) {
                 ContactInfo contactInfo = contactIt.next();
-                if (contactInfo.name != null && contactInfo.name.length() > searchPosition) {
+                if (contactInfo.matchType == MATCH_TYPE_NAME && contactInfo.name != null &&
+                    contactInfo.name.length() > searchPosition) {
                     Character testedChar = contactInfo.name.charAt(searchPosition);
                     String testedChars = characters[index];
                     for (int i = 0; i < testedChars.length(); ++i) {
@@ -872,6 +873,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         }
 
         // Now check if we find matching phone numbers
+        // TODO: do the same as the MATCH_TYPE_NAME match, do not query on each one
         if (mIntroducedNumbers.length() > 0) {
             Cursor c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                                                   new String[]{ ContactsContract.Data.CONTACT_ID,
@@ -908,9 +910,9 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         Uri uri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, id);
         InputStream input = ContactsContract.Contacts.openContactPhotoInputStream(getContentResolver(), uri);
         if (input == null) {
-            return Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_contact_picture), 48, 48, true);
+            return Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.ic_contact_picture), 56, 56, true);
         }
-        return Bitmap.createScaledBitmap(BitmapFactory.decodeStream(input), 48, 48, true);
+        return Bitmap.createScaledBitmap(BitmapFactory.decodeStream(input), 56, 56, true);
     }
 
     public boolean onKey(View view, int keyCode, KeyEvent event) {
