@@ -146,6 +146,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private boolean mDTMFToneEnabled;
 
     private int searchPosition = 0;
+    private String mIntroducedNumbers;
     private Collator mCollator;
     private Stack<ArrayList<ContactInfo>> previousCursors = new Stack<ArrayList<ContactInfo>>();
     private static final String[] characters = { "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv",
@@ -195,6 +196,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private class ContactInfo {
         public long   id;
         public String name;
+        public String number;
         public int    matchType;
     };
 
@@ -271,6 +273,8 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         mDigits.setKeyListener(DialerKeyListener.getInstance());
         mDigits.setOnClickListener(this);
         mDigits.setOnKeyListener(this);
+
+        mIntroducedNumbers = new String();
 
         mCollator = Collator.getInstance();
         mCollator.setStrength(Collator.PRIMARY);
@@ -778,34 +782,54 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private void keyPressed(int keyCode) {
         int index = -1;
         switch (keyCode) {
+            case KeyEvent.KEYCODE_0:
+                mIntroducedNumbers += '0';
+                break;
+            case KeyEvent.KEYCODE_1:
+                mIntroducedNumbers += '1';
+                break;
             case KeyEvent.KEYCODE_2:
+                mIntroducedNumbers += '2';
                 index = 0;
                 break;
             case KeyEvent.KEYCODE_3:
+                mIntroducedNumbers += '3';
                 index = 1;
                 break;
             case KeyEvent.KEYCODE_4:
+                mIntroducedNumbers += '4';
                 index = 2;
                 break;
             case KeyEvent.KEYCODE_5:
+                mIntroducedNumbers += '5';
                 index = 3;
                 break;
             case KeyEvent.KEYCODE_6:
+                mIntroducedNumbers += '6';
                 index = 4;
                 break;
             case KeyEvent.KEYCODE_7:
+                mIntroducedNumbers += '7';
                 index = 5;
                 break;
             case KeyEvent.KEYCODE_8:
+                mIntroducedNumbers += '8';
                 index = 6;
                 break;
             case KeyEvent.KEYCODE_9:
+                mIntroducedNumbers += '9';
                 index = 7;
                 break;
             default:
                 break;
         }
+
+        ArrayList<ContactInfo> newContacts = new ArrayList<ContactInfo>();
+
+        boolean shouldNotify = false;
         if (mResultList != null && index > -1) {
+            shouldNotify = true;
+
             if (previousCursors.empty()) {
                 ArrayList<ContactInfo> contacts = new ArrayList<ContactInfo>();
                 Cursor c = managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
@@ -825,7 +849,6 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
 
             ArrayList<ContactInfo> contacts = previousCursors.peek();
 
-            ArrayList<ContactInfo> newContacts = new ArrayList<ContactInfo>();
             Iterator<ContactInfo> contactIt = contacts.iterator();
             while (contactIt.hasNext()) {
                 ContactInfo contactInfo = contactIt.next();
@@ -841,11 +864,35 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     }
                 }
             }
+        }
 
+        // Now check if we find matching phone numbers
+        if (mIntroducedNumbers.length() > 0) {
+            Cursor c = getContentResolver().query(Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(mIntroducedNumbers)),
+                                                  new String[]{ ContactsContract.Contacts._ID,
+                                                                ContactsContract.Contacts.DISPLAY_NAME,
+                                                                ContactsContract.PhoneLookup.NUMBER }, null, null, null);
+            while (c.moveToNext()) {
+                shouldNotify = true;
+                ContactInfo contactInfo = new ContactInfo();
+                contactInfo.id = c.getLong(c.getColumnIndex(ContactsContract.Contacts._ID));
+                contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                contactInfo.number = c.getString(c.getColumnIndex(ContactsContract.PhoneLookup.NUMBER));
+                contactInfo.matchType = MATCH_TYPE_NUMBER;
+                newContacts.add(contactInfo);
+            }
+            c.close();
+        }
+
+        if (keyCode != KeyEvent.KEYCODE_DEL) {
             previousCursors.push(newContacts);
             searchPosition++;
+        }
+
+        if (shouldNotify) {
             mResultListAdapter.notifyDataSetChanged();
         }
+
         KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
         mDigits.onKeyDown(keyCode, event);
     }
@@ -938,8 +985,10 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 if (searchPosition > 0) {
                     searchPosition--;
                     previousCursors.pop();
+                    mIntroducedNumbers = mIntroducedNumbers.substring(0, mIntroducedNumbers.length() - 1);
                 }
                 if (searchPosition == 0) {
+                    mIntroducedNumbers = new String();
                     previousCursors = new Stack<ArrayList<ContactInfo>>();
                 }
                 keyPressed(KeyEvent.KEYCODE_DEL);
@@ -1002,6 +1051,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 //Wysie: Invoke checkForNumber() to disable button
                 checkForNumber();
                 searchPosition = 0;
+                mIntroducedNumbers = new String();
                 previousCursors = new Stack<ArrayList<ContactInfo>>();
                 mResultListAdapter.notifyDataSetChanged();
                 // TODO: The framework forgets to clear the pressed
@@ -1341,13 +1391,19 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             }
             TextView text = (TextView) convertView.findViewById(R.id.text);
             text.setText(contactInfo.name, TextView.BufferType.SPANNABLE);
-            Spannable resultToSpan = (Spannable) text.getText();
-            resultToSpan.setSpan(new BackgroundColorSpan(android.graphics.Color.YELLOW), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            resultToSpan.setSpan(new ForegroundColorSpan(android.graphics.Color.BLACK), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 
-            TextView phone = (TextView) convertView.findViewById(R.id.phone);
-            if (phone != null) {
-                phone.setText("+0100000000");
+            if (contactInfo.matchType == MATCH_TYPE_NAME) {
+                Spannable resultToSpan = (Spannable) text.getText();
+                resultToSpan.setSpan(new BackgroundColorSpan(android.graphics.Color.YELLOW), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                resultToSpan.setSpan(new ForegroundColorSpan(android.graphics.Color.BLACK), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            } else if (contactInfo.matchType == MATCH_TYPE_INITIALS) {
+                // TODO
+            } else {
+                TextView phone = (TextView) convertView.findViewById(R.id.phone);
+                phone.setText(contactInfo.number, TextView.BufferType.SPANNABLE);
+                Spannable resultToSpan = (Spannable) phone.getText();
+                resultToSpan.setSpan(new BackgroundColorSpan(android.graphics.Color.YELLOW), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                resultToSpan.setSpan(new ForegroundColorSpan(android.graphics.Color.BLACK), 0, searchPosition, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
 
             ImageView icon = (ImageView) convertView.findViewById(R.id.icon);
