@@ -292,7 +292,11 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     }
                     ArrayList<ContactInfo> contacts = previousCursors.peek();
                     ContactInfo contact = contacts.get(position);
-                    ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
+                    if (contact.matchType == MATCH_TYPE_NUMBER) {
+                        ContactsUtils.initiateCall(context, contact.number);
+                    } else {
+                        ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
+                    }
                 }
             });
         }
