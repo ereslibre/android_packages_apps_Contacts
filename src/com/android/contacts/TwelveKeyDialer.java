@@ -298,6 +298,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     } else {
                         ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
                     }
+                    mDigits.getText().clear();
                 }
             });
         }
@@ -785,6 +786,11 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     }
 
     private void keyPressed(int keyCode) {
+        if (mResultList == null) {
+            keyPressed_(keyCode);
+            return;
+        }
+
         int index = -1;
         switch (keyCode) {
             case KeyEvent.KEYCODE_0:
@@ -824,6 +830,15 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             case KeyEvent.KEYCODE_9:
                 mIntroducedNumbers += '9';
                 index = 7;
+                break;
+            case KeyEvent.KEYCODE_STAR:
+                mIntroducedNumbers += '*';
+                break;
+            case KeyEvent.KEYCODE_PLUS:
+                mIntroducedNumbers += '+';
+                break;
+            case KeyEvent.KEYCODE_POUND:
+                mIntroducedNumbers += '#';
                 break;
             default:
                 break;
@@ -896,6 +911,10 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
 
         mResultListAdapter.notifyDataSetChanged();
 
+        keyPressed_(keyCode);
+    }
+
+    private void keyPressed_(int keyCode) {
         KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
         mDigits.onKeyDown(keyCode, event);
     }
