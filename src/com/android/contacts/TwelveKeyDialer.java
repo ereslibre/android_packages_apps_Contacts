@@ -831,10 +831,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
 
         ArrayList<ContactInfo> newContacts = new ArrayList<ContactInfo>();
 
-        boolean shouldNotify = false;
         if (mResultList != null && index > -1) {
-            shouldNotify = true;
-
             if (previousCursors.empty()) {
                 ArrayList<ContactInfo> contacts = new ArrayList<ContactInfo>();
                 Cursor c = managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
@@ -882,7 +879,6 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                                                   ContactsContract.CommonDataKinds.Phone.NUMBER + " like ?",
                                                   new String[]{ mIntroducedNumbers + '%' }, null);
             while (c.moveToNext()) {
-                shouldNotify = true;
                 ContactInfo contactInfo = new ContactInfo();
                 contactInfo.id = c.getLong(c.getColumnIndex(ContactsContract.Data.CONTACT_ID));
                 contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
@@ -898,9 +894,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             searchPosition++;
         }
 
-        if (shouldNotify) {
-            mResultListAdapter.notifyDataSetChanged();
-        }
+        mResultListAdapter.notifyDataSetChanged();
 
         KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
         mDigits.onKeyDown(keyCode, event);
