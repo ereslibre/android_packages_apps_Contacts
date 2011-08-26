@@ -787,7 +787,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     }
 
     private void keyPressed(int keyCode) {
-        if (mResultList == null) {
+        if (mResultList == null || keyCode == KeyEvent.KEYCODE_DEL) {
             keyPressed_(keyCode);
             return;
         }
@@ -850,64 +850,62 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 break;
         }
 
-        ArrayList<ContactInfo> newContacts = new ArrayList<ContactInfo>();
+        if (previousCursors.empty()) {
+            ArrayList<ContactInfo> contacts = new ArrayList<ContactInfo>();
 
-        if (mResultList != null && index > -1) {
-            if (previousCursors.empty()) {
-                ArrayList<ContactInfo> contacts = new ArrayList<ContactInfo>();
-                Cursor c = managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
-                while (c.moveToNext()) {
-                    if (Integer.parseInt(c.getString(c.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
-                        long contactId = c.getLong(c.getColumnIndex(ContactsContract.Contacts._ID));
-                        ContactInfo contactInfo = new ContactInfo();
-                        contactInfo.id = contactId;
-                        contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
-                        contactInfo.matchType = MATCH_TYPE_NAME;
-                        contacts.add(contactInfo);
-                    }
-                }
-                previousCursors.push(contacts);
-                c.close();
-            }
-
-            ArrayList<ContactInfo> contacts = previousCursors.peek();
-
-            Iterator<ContactInfo> contactIt = contacts.iterator();
-            while (contactIt.hasNext()) {
-                ContactInfo contactInfo = contactIt.next();
-                if (contactInfo.matchType == MATCH_TYPE_NAME && contactInfo.name != null &&
-                    contactInfo.name.length() > searchPosition) {
-                    Character testedChar = contactInfo.name.charAt(searchPosition);
-                    String testedChars = characters[index];
-                    for (int i = 0; i < testedChars.length(); ++i) {
-                        Character testedChar2 = testedChars.charAt(i);
-                        if (mCollator.compare(testedChar.toString(), testedChar2.toString()) == 0) {
-                            newContacts.add(contactInfo);
-                            break;
-                        }
-                    }
+            Cursor c = managedQuery(ContactsContract.Contacts.CONTENT_URI, null, null, null, null);
+            while (c.moveToNext()) {
+                if (Integer.parseInt(c.getString(c.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
+                    long contactId = c.getLong(c.getColumnIndex(ContactsContract.Contacts._ID));
+                    ContactInfo contactInfo = new ContactInfo();
+                    contactInfo.id = contactId;
+                    contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                    contactInfo.matchType = MATCH_TYPE_NAME;
+                    contacts.add(contactInfo);
                 }
             }
-        }
+            c.close();
 
-        // Now check if we find matching phone numbers
-        // TODO: do the same as the MATCH_TYPE_NAME match, do not query on each one
-        if (mIntroducedNumbers.length() > 0) {
-            Cursor c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                                                  new String[]{ ContactsContract.Data.CONTACT_ID,
-                                                                ContactsContract.Contacts.DISPLAY_NAME,
-                                                                ContactsContract.CommonDataKinds.Phone.NUMBER },
-                                                  ContactsContract.CommonDataKinds.Phone.NUMBER + " like ?",
-                                                  new String[]{ mIntroducedNumbers + '%' }, null);
+            c = getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                                           new String[]{ ContactsContract.Data.CONTACT_ID,
+                                                         ContactsContract.Contacts.DISPLAY_NAME,
+                                                         ContactsContract.CommonDataKinds.Phone.NUMBER },
+                                           ContactsContract.CommonDataKinds.Phone.NUMBER + " like ?",
+                                           new String[]{ mIntroducedNumbers + '%' }, null);
             while (c.moveToNext()) {
                 ContactInfo contactInfo = new ContactInfo();
                 contactInfo.id = c.getLong(c.getColumnIndex(ContactsContract.Data.CONTACT_ID));
                 contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
                 contactInfo.number = c.getString(c.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
                 contactInfo.matchType = MATCH_TYPE_NUMBER;
-                newContacts.add(contactInfo);
+                contacts.add(contactInfo);
             }
             c.close();
+
+            previousCursors.push(contacts);
+        }
+
+        ArrayList<ContactInfo> contacts = previousCursors.peek();
+        ArrayList<ContactInfo> newContacts = new ArrayList<ContactInfo>();
+
+        Iterator<ContactInfo> contactIt = contacts.iterator();
+        while (contactIt.hasNext()) {
+            ContactInfo contactInfo = contactIt.next();
+            if (contactInfo.matchType == MATCH_TYPE_NAME && contactInfo.name != null &&
+                contactInfo.name.length() > searchPosition) {
+                Character testedChar = contactInfo.name.charAt(searchPosition);
+                String testedChars = characters[index];
+                for (int i = 0; i < testedChars.length(); ++i) {
+                    Character testedChar2 = testedChars.charAt(i);
+                    if (mCollator.compare(testedChar.toString(), testedChar2.toString()) == 0) {
+                        newContacts.add(contactInfo);
+                        break;
+                    }
+                }
+            } else if (contactInfo.matchType == MATCH_TYPE_NUMBER && contactInfo.number != null &&
+                contactInfo.number.startsWith(mIntroducedNumbers)) {
+                newContacts.add(contactInfo);
+            }
         }
 
         if (keyCode != KeyEvent.KEYCODE_DEL) {
