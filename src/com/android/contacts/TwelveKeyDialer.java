@@ -238,6 +238,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         if (SpecialCharSequenceMgr.handleChars(this, input.toString(), mDigits)) {
             // A special sequence was entered, clear the digits
             mDigits.getText().clear();
+            cleanResultListView();
         }
 
         if (!isDigitsEmpty()) {
@@ -1124,6 +1125,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         mDigits.getText().clear();
+        cleanResultListView();
         finish();
     }
     */
@@ -1145,6 +1147,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         mDigits.getText().clear();
+        cleanResultListView();
         if (!returnToDialer) {
             finish();
         }
@@ -1184,6 +1187,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         mDigits.getText().clear();
+        cleanResultListView();
 
         // Don't finish TwelveKeyDialer yet if we're sending a blank flash for CDMA. CDMA
         // networks use Flash messages when special processing needs to be done, mainly for
