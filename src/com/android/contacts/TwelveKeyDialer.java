@@ -150,8 +150,8 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private String mIntroducedNumbers;
     private Collator mCollator;
     private Stack<ArrayList<ContactInfo>> previousCursors = new Stack<ArrayList<ContactInfo>>();
-    private static final String[] characters = { "abc", "def", "ghi", "jkl", "mno", "pqrs", "tuv",
-                                                 "wxyz" };
+    private static final String[] characters = { "1 ", "2abc", "3def", "4ghi", "5jkl", "6mno",
+                                                 "7pqrs", "8tuv", "9wxyz", "*", "0", "+", "#" };
     private ListView mResultList;
     private ResultListAdapter mResultListAdapter;
 
@@ -299,6 +299,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                         ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
                     }
                     mDigits.getText().clear();
+                    cleanResultListView();
                 }
             });
         }
@@ -793,52 +794,57 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
 
         int index = -1;
         switch (keyCode) {
-            case KeyEvent.KEYCODE_0:
-                mIntroducedNumbers += '0';
-                break;
             case KeyEvent.KEYCODE_1:
                 mIntroducedNumbers += '1';
+                index = 0;
                 break;
             case KeyEvent.KEYCODE_2:
                 mIntroducedNumbers += '2';
-                index = 0;
+                index = 1;
                 break;
             case KeyEvent.KEYCODE_3:
                 mIntroducedNumbers += '3';
-                index = 1;
+                index = 2;
                 break;
             case KeyEvent.KEYCODE_4:
                 mIntroducedNumbers += '4';
-                index = 2;
+                index = 3;
                 break;
             case KeyEvent.KEYCODE_5:
                 mIntroducedNumbers += '5';
-                index = 3;
+                index = 4;
                 break;
             case KeyEvent.KEYCODE_6:
                 mIntroducedNumbers += '6';
-                index = 4;
+                index = 5;
                 break;
             case KeyEvent.KEYCODE_7:
                 mIntroducedNumbers += '7';
-                index = 5;
+                index = 6;
                 break;
             case KeyEvent.KEYCODE_8:
                 mIntroducedNumbers += '8';
-                index = 6;
+                index = 7;
                 break;
             case KeyEvent.KEYCODE_9:
                 mIntroducedNumbers += '9';
-                index = 7;
+                index = 8;
                 break;
             case KeyEvent.KEYCODE_STAR:
                 mIntroducedNumbers += '*';
+                index = 9;
+                break;
+            case KeyEvent.KEYCODE_0:
+                mIntroducedNumbers += '0';
+                index = 10;
                 break;
             case KeyEvent.KEYCODE_PLUS:
                 mIntroducedNumbers += '+';
+                index = 11;
                 break;
             case KeyEvent.KEYCODE_POUND:
                 mIntroducedNumbers += '#';
+                index = 12;
                 break;
             default:
                 break;
@@ -1064,6 +1070,13 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         return false;
     }
 
+    private void cleanResultListView() {
+        searchPosition = 0;
+        mIntroducedNumbers = new String();
+        previousCursors = new Stack<ArrayList<ContactInfo>>();
+        mResultListAdapter.notifyDataSetChanged();
+    }
+
     public boolean onLongClick(View view) {
         final Editable digits = mDigits.getText();
         int id = view.getId();
@@ -1072,10 +1085,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 digits.clear();
                 //Wysie: Invoke checkForNumber() to disable button
                 checkForNumber();
-                searchPosition = 0;
-                mIntroducedNumbers = new String();
-                previousCursors = new Stack<ArrayList<ContactInfo>>();
-                mResultListAdapter.notifyDataSetChanged();
+                cleanResultListView();
                 // TODO: The framework forgets to clear the pressed
                 // status of disabled button. Until this is fixed,
                 // clear manually the pressed status. b/2133127
