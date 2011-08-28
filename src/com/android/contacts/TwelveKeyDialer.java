@@ -87,6 +87,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 //Wysie
 import android.content.ComponentName;
@@ -156,6 +158,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private ListView mResultList;
     private ResultListAdapter mResultListAdapter;
     private boolean mSmartDialingEnabled;
+    private Pattern mNameExtractor;
 
     // Vibration (haptic feedback) for dialer key presses.
     private Vibrator mVibrator;
@@ -302,6 +305,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         mCharacters.put(KeyEvent.KEYCODE_0, "0");
         mCharacters.put(KeyEvent.KEYCODE_PLUS, "+");
         mCharacters.put(KeyEvent.KEYCODE_POUND, "#");
+        mNameExtractor = Pattern.compile("[^\\p{L}]*(\\p{L}+)");
 
         mResultList = (ListView) findViewById(R.id.resultList);
         if (mResultList != null) {
@@ -316,11 +320,12 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     }
                     ArrayList<ContactInfo> contacts = previousCursors.peek();
                     ContactInfo contact = contacts.get(position);
-                    if (contact.matchType == MATCH_TYPE_NUMBER) {
+                    /*if (contact.matchType == MATCH_TYPE_NUMBER) {
                         ContactsUtils.initiateCall(context, contact.number);
                     } else {
                         ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
-                    }
+                    }*/
+                    Log.d(TAG, extractNames(contact.name).toString());
                     mDigits.getText().clear();
                     cleanResultListView();
                 }
@@ -383,6 +388,15 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
      */
     protected int getContentViewResource() {
         return R.layout.twelve_key_dialer;
+    }
+
+    private ArrayList<String> extractNames(String fullName) {
+        ArrayList<String> res = new ArrayList<String>();
+        Matcher m = mNameExtractor.matcher(fullName);
+        while (m.find()) {
+            res.add(m.group(1));
+        }
+        return res;
     }
 
     private boolean resolveIntent() {
