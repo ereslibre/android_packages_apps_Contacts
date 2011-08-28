@@ -305,7 +305,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         mCharacters.put(KeyEvent.KEYCODE_0, "0");
         mCharacters.put(KeyEvent.KEYCODE_PLUS, "+");
         mCharacters.put(KeyEvent.KEYCODE_POUND, "#");
-        mNameExtractor = Pattern.compile("[^\\p{L}]*(\\p{L}+)");
+        mNameExtractor = Pattern.compile("[^\\p{L}\\d]*([\\p{L}\\d]+)");
 
         mResultList = (ListView) findViewById(R.id.resultList);
         if (mResultList != null) {
