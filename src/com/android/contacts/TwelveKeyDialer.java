@@ -84,6 +84,9 @@ import java.util.ListIterator;
 import java.util.Stack;
 import java.text.Collator;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Collections;
+import java.util.Comparator;
 
 //Wysie
 import android.content.ComponentName;
@@ -147,13 +150,12 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private boolean mDTMFToneEnabled;
 
     private int searchPosition = 0;
-    private String mIntroducedNumbers;
     private Collator mCollator;
     private Stack<ArrayList<ContactInfo>> previousCursors = new Stack<ArrayList<ContactInfo>>();
-    private static final String[] characters = { "1 ", "2abc", "3def", "4ghi", "5jkl", "6mno",
-                                                 "7pqrs", "8tuv", "9wxyz", "*", "0", "+", "#" };
+    private static final HashMap<Integer, String> mCharacters = new HashMap<Integer, String>();
     private ListView mResultList;
     private ResultListAdapter mResultListAdapter;
+    private boolean mSmartDialingEnabled;
 
     // Vibration (haptic feedback) for dialer key presses.
     private Vibrator mVibrator;
@@ -193,13 +195,21 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private static final int MATCH_TYPE_NAME = 0;
     private static final int MATCH_TYPE_INITIALS = 1;
     private static final int MATCH_TYPE_NUMBER = 2;
+    private static final int KEY_NOT_PRESSED = 0;
+    private static final int KEY_PRESSED = 1;
 
     private class ContactInfo {
         public long   id;
         public String name;
         public String number;
         public int    matchType;
-    };
+    }
+
+    private class ContactInfoComparator implements Comparator<ContactInfo> {
+        public int compare(ContactInfo c1, ContactInfo c2) {
+            return mCollator.compare(c1.name, c2.name);
+        }
+    }
 
     PhoneStateListener mPhoneStateListener = new PhoneStateListener() {
             /**
@@ -276,10 +286,22 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         mDigits.setOnClickListener(this);
         mDigits.setOnKeyListener(this);
 
-        mIntroducedNumbers = new String();
-
         mCollator = Collator.getInstance();
         mCollator.setStrength(Collator.PRIMARY);
+
+        mCharacters.put(KeyEvent.KEYCODE_1, "1 "); // trailing space in purpose
+        mCharacters.put(KeyEvent.KEYCODE_2, "2abc");
+        mCharacters.put(KeyEvent.KEYCODE_3, "3def");
+        mCharacters.put(KeyEvent.KEYCODE_4, "4ghi");
+        mCharacters.put(KeyEvent.KEYCODE_5, "5jkl");
+        mCharacters.put(KeyEvent.KEYCODE_6, "6mno");
+        mCharacters.put(KeyEvent.KEYCODE_7, "7pqrs");
+        mCharacters.put(KeyEvent.KEYCODE_8, "8tuv");
+        mCharacters.put(KeyEvent.KEYCODE_9, "9wxyz");
+        mCharacters.put(KeyEvent.KEYCODE_STAR, "*");
+        mCharacters.put(KeyEvent.KEYCODE_0, "0");
+        mCharacters.put(KeyEvent.KEYCODE_PLUS, "+");
+        mCharacters.put(KeyEvent.KEYCODE_POUND, "#");
 
         mResultList = (ListView) findViewById(R.id.resultList);
         if (mResultList != null) {
@@ -303,6 +325,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     cleanResultListView();
                 }
             });
+            findMatchingContacts();
         }
 
         maybeAddNumberFormatting();
@@ -597,6 +620,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         mVibratePattern = stringToLongArray(Settings.System.getString(getContentResolver(), Settings.System.HAPTIC_TAP_ARRAY));
         retrieveLastDialled = ePrefs.getBoolean("dial_retrieve_last", false);
         returnToDialer = ePrefs.getBoolean("dial_return", false);
+        mSmartDialingEnabled = ePrefs.getBoolean("dial_enable_smart_dialing", true);
 
         updateDialAndDeleteButtonEnabledState();
         updateDialer();
@@ -788,67 +812,28 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     }
 
     private void keyPressed(int keyCode) {
-        if (mResultList == null || keyCode == KeyEvent.KEYCODE_DEL) {
-            keyPressed_(keyCode);
-            return;
-        }
+        KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
+        mDigits.onKeyDown(keyCode, event);
 
-        int index = -1;
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_1:
-                mIntroducedNumbers += '1';
-                index = 0;
-                break;
-            case KeyEvent.KEYCODE_2:
-                mIntroducedNumbers += '2';
-                index = 1;
-                break;
-            case KeyEvent.KEYCODE_3:
-                mIntroducedNumbers += '3';
-                index = 2;
-                break;
-            case KeyEvent.KEYCODE_4:
-                mIntroducedNumbers += '4';
-                index = 3;
-                break;
-            case KeyEvent.KEYCODE_5:
-                mIntroducedNumbers += '5';
-                index = 4;
-                break;
-            case KeyEvent.KEYCODE_6:
-                mIntroducedNumbers += '6';
-                index = 5;
-                break;
-            case KeyEvent.KEYCODE_7:
-                mIntroducedNumbers += '7';
-                index = 6;
-                break;
-            case KeyEvent.KEYCODE_8:
-                mIntroducedNumbers += '8';
-                index = 7;
-                break;
-            case KeyEvent.KEYCODE_9:
-                mIntroducedNumbers += '9';
-                index = 8;
-                break;
-            case KeyEvent.KEYCODE_STAR:
-                mIntroducedNumbers += '*';
-                index = 9;
-                break;
-            case KeyEvent.KEYCODE_0:
-                mIntroducedNumbers += '0';
-                index = 10;
-                break;
-            case KeyEvent.KEYCODE_PLUS:
-                mIntroducedNumbers += '+';
-                index = 11;
-                break;
-            case KeyEvent.KEYCODE_POUND:
-                mIntroducedNumbers += '#';
-                index = 12;
-                break;
-            default:
-                break;
+        if (mSmartDialingEnabled && mResultList != null) {
+            if (mDigits.getText().length() > 0) {
+                findMatchingContacts(KEY_PRESSED, keyCode);
+            } else {
+                cleanResultListView();
+            }
+        }
+    }
+
+    private void findMatchingContacts()
+    {
+        findMatchingContacts(KEY_NOT_PRESSED, -1);
+    }
+
+    private void findMatchingContacts(int keyPressed, int keyCode)
+    {
+        if (keyPressed == KEY_NOT_PRESSED) {
+            mResultListAdapter.notifyDataSetChanged();
+            return;
         }
 
         if (previousCursors.empty()) {
@@ -872,7 +857,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                                                          ContactsContract.Contacts.DISPLAY_NAME,
                                                          ContactsContract.CommonDataKinds.Phone.NUMBER },
                                            ContactsContract.CommonDataKinds.Phone.NUMBER + " like ?",
-                                           new String[]{ mIntroducedNumbers + '%' }, null);
+                                           new String[]{ mDigits.getText().toString() + '%' }, null);
             while (c.moveToNext()) {
                 ContactInfo contactInfo = new ContactInfo();
                 contactInfo.id = c.getLong(c.getColumnIndex(ContactsContract.Data.CONTACT_ID));
@@ -883,45 +868,39 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             }
             c.close();
 
+            Collections.sort(contacts, new ContactInfoComparator());
+
             previousCursors.push(contacts);
         }
 
-        ArrayList<ContactInfo> contacts = previousCursors.peek();
-        ArrayList<ContactInfo> newContacts = new ArrayList<ContactInfo>();
-
-        Iterator<ContactInfo> contactIt = contacts.iterator();
-        while (contactIt.hasNext()) {
-            ContactInfo contactInfo = contactIt.next();
-            if (contactInfo.matchType == MATCH_TYPE_NAME && contactInfo.name != null &&
-                contactInfo.name.length() > searchPosition) {
-                Character testedChar = contactInfo.name.charAt(searchPosition);
-                String testedChars = characters[index];
-                for (int i = 0; i < testedChars.length(); ++i) {
-                    Character testedChar2 = testedChars.charAt(i);
-                    if (mCollator.compare(testedChar.toString(), testedChar2.toString()) == 0) {
-                        newContacts.add(contactInfo);
-                        break;
-                    }
-                }
-            } else if (contactInfo.matchType == MATCH_TYPE_NUMBER && contactInfo.number != null &&
-                contactInfo.number.startsWith(mIntroducedNumbers)) {
-                newContacts.add(contactInfo);
-            }
-        }
-
         if (keyCode != KeyEvent.KEYCODE_DEL) {
+            ArrayList<ContactInfo> contacts = previousCursors.peek();
+            ArrayList<ContactInfo> newContacts = new ArrayList<ContactInfo>();
+
+            Iterator<ContactInfo> contactIt = contacts.iterator();
+            while (contactIt.hasNext()) {
+                ContactInfo contactInfo = contactIt.next();
+                if (contactInfo.matchType == MATCH_TYPE_NAME && contactInfo.name != null &&
+                    contactInfo.name.length() > searchPosition) {
+                    Character testedChar = contactInfo.name.charAt(searchPosition);
+                    String testedChars = mCharacters.get(keyCode);
+                    for (int i = 0; i < testedChars.length(); ++i) {
+                        Character testedChar2 = testedChars.charAt(i);
+                        if (mCollator.compare(testedChar.toString(), testedChar2.toString()) == 0) {
+                            newContacts.add(contactInfo);
+                            break;
+                        }
+                    }
+                } else if (contactInfo.matchType == MATCH_TYPE_NUMBER && contactInfo.number != null &&
+                    contactInfo.number.startsWith(mDigits.getText().toString())) {
+                    newContacts.add(contactInfo);
+                }
+            }
             previousCursors.push(newContacts);
             searchPosition++;
         }
 
         mResultListAdapter.notifyDataSetChanged();
-
-        keyPressed_(keyCode);
-    }
-
-    private void keyPressed_(int keyCode) {
-        KeyEvent event = new KeyEvent(KeyEvent.ACTION_DOWN, keyCode);
-        mDigits.onKeyDown(keyCode, event);
     }
 
     private Bitmap loadContactPhoto(long id) {
@@ -1009,17 +988,19 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 break;
             }
             case R.id.deleteButton: {
-                if (searchPosition > 0) {
-                    searchPosition--;
-                    previousCursors.pop();
-                    mIntroducedNumbers = mIntroducedNumbers.substring(0, mIntroducedNumbers.length() - 1);
-                }
-                if (searchPosition == 0) {
-                    mIntroducedNumbers = new String();
-                    previousCursors = new Stack<ArrayList<ContactInfo>>();
+                if (mSmartDialingEnabled) {
+                    if (searchPosition > 0) {
+                        searchPosition--;
+                        previousCursors.pop();
+                    }
+                    if (searchPosition == 0) {
+                        previousCursors = new Stack<ArrayList<ContactInfo>>();
+                    }
                 }
                 keyPressed(KeyEvent.KEYCODE_DEL);
-                mResultListAdapter.notifyDataSetChanged();
+                if (mSmartDialingEnabled) {
+                    mResultListAdapter.notifyDataSetChanged();
+                }
                 break;
             }
             case R.id.dialButton: {
@@ -1070,10 +1051,13 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     }
 
     private void cleanResultListView() {
-        searchPosition = 0;
-        mIntroducedNumbers = new String();
-        previousCursors = new Stack<ArrayList<ContactInfo>>();
-        mResultListAdapter.notifyDataSetChanged();
+        if (mSmartDialingEnabled) {
+            searchPosition = 0;
+            previousCursors = new Stack<ArrayList<ContactInfo>>();
+            if (mResultListAdapter != null) {
+                mResultListAdapter.notifyDataSetChanged();
+            }
+        }
     }
 
     public boolean onLongClick(View view) {
@@ -1411,18 +1395,17 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
             if (previousCursors.empty() || previousCursors.peek().size() <= position) {
                 return null;
             }
+
             ContactInfo contactInfo = previousCursors.peek().get(position);
-            switch (contactInfo.matchType) {
-                case MATCH_TYPE_NAME:
-                case MATCH_TYPE_INITIALS:
-                    convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_small, null);
-                    break;
-                case MATCH_TYPE_NUMBER:
-                    convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_with_phone_small, null);
-                    break;
-            }
+            convertView = mInflater.inflate(R.layout.dialpad_chooser_list_item_small, null);
+
             TextView text = (TextView) convertView.findViewById(R.id.text);
             text.setText(contactInfo.name, TextView.BufferType.SPANNABLE);
+
+            if (contactInfo.matchType != MATCH_TYPE_NUMBER) {
+                TextView phone = (TextView) convertView.findViewById(R.id.phone);
+                phone.setVisibility(View.GONE);
+            }
 
             if (contactInfo.matchType == MATCH_TYPE_NAME) {
                 Spannable resultToSpan = (Spannable) text.getText();
@@ -1756,6 +1739,16 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     	initVoicemailButton();
     	checkForNumber();
     	setDigitsColor();
+
+        if (mSmartDialingEnabled) {
+            mResultList = (ListView) findViewById(R.id.resultList);
+            if (mResultList != null) {
+                mResultList.setVisibility(View.VISIBLE);
+            }
+        } else if (mResultList != null) {
+            mResultList.setVisibility(View.GONE);
+            mResultList = null;
+        }
 
         // The voicemail number might have been set after the app was started
         if (mHasVoicemail != hasVoicemail()) {

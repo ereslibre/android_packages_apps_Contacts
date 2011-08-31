@@ -29,7 +29,7 @@
     <!-- TODO: Use a textAppearance to control the display of the number -->
     <EditText android:id="@+id/digits"
         android:layout_width="match_parent"
-        android:layout_height="68dip"
+        android:layout_height="74dip"
         android:gravity="center"
         android:maxLines="1"
         android:scrollHorizontally="true"
@@ -46,7 +46,10 @@
 
     <ListView android:id="@+id/resultList"
         android:layout_width="match_parent"
-        android:layout_height="80dip"
+        android:layout_height="1dip"
+        android:layout_weight="2"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
     />
 
     <!-- Keypad section -->

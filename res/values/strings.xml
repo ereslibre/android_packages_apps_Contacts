@@ -1119,6 +1119,9 @@
     <!-- Field title for the date for an event -->
     <string name="label_date">Date</string>
 
+    <!-- Title of clear button in date picker -->
+    <string name="button_clear_date">Clear</string>
+
     <!-- String describing which account type a contact came from when editing it -->
     <string name="account_type_format"><xliff:g id="source" example="Gmail">%1$s</xliff:g> contact</string>
 
@@ -1226,6 +1229,9 @@
     <string name="summaryoff_disable_num_check">LAB and menu will be enabled only if at least one number is entered (except voicemail)</string>
     <string name="title_enable_haptic_feedback">Enable haptic feedback</string>
     <string name="summary_enable_haptic_feedback">Uses keypad tap pattern - see CyanogenMod settings to adjust</string>
+    <string name="title_enable_smart_dialing">Enable smart dialing</string>
+    <string name="summaryon_enable_smart_dialing">Enables contact autocompletion while number input</string>
+    <string name="summaryoff_enable_smart_dialing">Disables contact autocompletion while number input</string>
     <string name="title_change_digits_color">Change digits color</string>
     <string name="title_digits_color_pressed">Digits color (pressed)</string>
     <string name="title_digits_color_focused">Digits color (focused)</string>

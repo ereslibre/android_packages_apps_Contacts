@@ -57,6 +57,12 @@
             android:title="@string/title_enable_haptic_feedback"
             android:summary="@string/summary_enable_haptic_feedback"
             android:defaultValue="true" />
+        <CheckBoxPreference
+            android:key="dial_enable_smart_dialing"
+            android:title="@string/title_enable_smart_dialing"
+            android:summaryOn="@string/summaryon_enable_smart_dialing"
+            android:summaryOff="@string/summaryoff_enable_smart_dialing"
+            android:defaultValue="true" />
         <PreferenceScreen
             android:key="dial_digits_color"
             android:title="@string/title_change_digits_color">  
