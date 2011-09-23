@@ -202,10 +202,16 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
     private static final int KEY_PRESSED = 1;
 
     private class ContactInfo {
-        public long   id;
-        public String name;
-        public String number;
-        public int    matchType;
+        public ContactInfo() {
+            name = null;
+            extractedNames = null;
+        }
+
+        public long              id;
+        public String            name;
+        public ArrayList<String> extractedNames;
+        public String            number;
+        public int               matchType;
     }
 
     private class ContactInfoComparator implements Comparator<ContactInfo> {
@@ -292,7 +298,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         mCollator = Collator.getInstance();
         mCollator.setStrength(Collator.PRIMARY);
 
-        mCharacters.put(KeyEvent.KEYCODE_1, "1 "); // trailing space in purpose
+        mCharacters.put(KeyEvent.KEYCODE_1, "1");
         mCharacters.put(KeyEvent.KEYCODE_2, "2abc");
         mCharacters.put(KeyEvent.KEYCODE_3, "3def");
         mCharacters.put(KeyEvent.KEYCODE_4, "4ghi");
@@ -320,12 +326,11 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     }
                     ArrayList<ContactInfo> contacts = previousCursors.peek();
                     ContactInfo contact = contacts.get(position);
-                    /*if (contact.matchType == MATCH_TYPE_NUMBER) {
+                    if (contact.matchType == MATCH_TYPE_NUMBER) {
                         ContactsUtils.initiateCall(context, contact.number);
                     } else {
                         ContactsUtils.callContact(contact.id, context, StickyTabs.getTab(getIntent()));
-                    }*/
-                    Log.d(TAG, extractNames(contact.name).toString());
+                    }
                     mDigits.getText().clear();
                     cleanResultListView();
                 }
@@ -860,6 +865,7 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                     ContactInfo contactInfo = new ContactInfo();
                     contactInfo.id = contactId;
                     contactInfo.name = c.getString(c.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
+                    contactInfo.extractedNames = extractNames(contactInfo.name);
                     contactInfo.matchType = MATCH_TYPE_NAME;
                     contacts.add(contactInfo);
                 }
@@ -896,11 +902,9 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
                 ContactInfo contactInfo = contactIt.next();
                 if (contactInfo.matchType == MATCH_TYPE_NAME && contactInfo.name != null &&
                     contactInfo.name.length() > searchPosition) {
-                    Character testedChar = contactInfo.name.charAt(searchPosition);
                     String testedChars = mCharacters.get(keyCode);
                     for (int i = 0; i < testedChars.length(); ++i) {
-                        Character testedChar2 = testedChars.charAt(i);
-                        if (mCollator.compare(testedChar.toString(), testedChar2.toString()) == 0) {
+                        if (contactNameMatches(contactInfo, testedChars.charAt(i))) {
                             newContacts.add(contactInfo);
                             break;
                         }
@@ -915,6 +919,11 @@ public class TwelveKeyDialer extends Activity implements View.OnClickListener,
         }
 
         mResultListAdapter.notifyDataSetChanged();
+    }
+
+    private boolean contactNameMatches(ContactInfo contactInfo, Character testedChar) {
+        final Character testedContactChar = contactInfo.name.charAt(searchPosition);
+        return mCollator.compare(testedContactChar.toString(), testedChar.toString()) == 0;
     }
 
     private Bitmap loadContactPhoto(long id) {
